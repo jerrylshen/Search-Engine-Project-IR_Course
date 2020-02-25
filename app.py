@@ -11,7 +11,7 @@ def home():
 @app.route('/output', methods=['POST'])
 def output():
 	query_list = request.form['tickers']
-	file = open("index.txt", "r")
+	file = open("smallIndex.txt", "r")
 	lines = file.readlines()
 	output = []
 	print("query_list:", query_list)
