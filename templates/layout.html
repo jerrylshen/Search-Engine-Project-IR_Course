@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131188952-1"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+		
+		  gtag('config', 'UA-131188952-1');
+		</script>
+		
+		<meta charset="UTF-8">
+	   <title>CS121 HW3</title>
+	   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css"  href="templates/css/loading.css"/>
+		<link rel="stylesheet" type="text/css"  href="templates/css/loading-btn.css"/>
+		<link rel="stylesheet" href="templates/css/index.css"/>
+		<script src="templates/js/index.js"></script>
+   </head>
+   <body>
+      {% include "includes/_navbar.html" %}
+      <div class="container">
+	      {% block body %} {% endblock %}
+      </div>
+      
+   
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.bundle.min.js"></script>
+   </body>
+</html>
