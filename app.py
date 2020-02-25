@@ -11,7 +11,7 @@ def home():
 #get query from form box from an html file
 @app.route('/output', methods=['POST'])
 def output():
-	query_list = [request.form['query']]
+	query_list = [request.form['query'].split(" ")]
 	#print(type(query_list))
 	#query_list string type turns into list type
 	
