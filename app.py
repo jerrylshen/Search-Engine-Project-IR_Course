@@ -8,23 +8,31 @@ app = Flask(__name__)
 def home():
 	return render_template("home.html")
 
+#get query from form box from an html file
 @app.route('/output', methods=['POST'])
 def output():
-	query_list = request.form['tickers']
+	query_list = [request.form['query']]
+	#print(type(query_list))
+	#query_list string type turns into list type
+	
 	file = open("smallIndex.txt", "r")
 	lines = file.readlines()
-	output = []
-	print("query_list:", query_list)
-	for word in [query_list]:
-		print("word:", word)
+	outputResults = []
+	
+	#loop through each word
+	for word in query_list:
+		word = word.strip() #remove spaces
+		
+		#go through small index
 		for line in lines:
-			print("Line:", line.split()[0][0:-1])
+			#print("Line:", line.split()[0][0:-1])
+			#first word in each index line is "str:", need to get rid of ":"
 			if line.split()[0][0:-1].lower() == word.lower():
-				print("output: ", line.split()[1:5])
-				output.append(line.split()[1:])
+				#print("outputResults: ", line.split()[1:5])
+				outputResults.append(line.split()[1:])
 				break
-	#print(output)
-	return render_template("output.html", output=output)
+	#print(outputResults)
+	return render_template("output.html", output=outputResults)
 """
 @app.route("/charts")
 def charts():
