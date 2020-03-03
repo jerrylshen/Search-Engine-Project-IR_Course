@@ -11,18 +11,19 @@ def home():
 #get query from form box from an html file
 @app.route('/output', methods=['POST'])
 def output():
-	query_list = [request.form['query'].split(" ")]
-	#print(type(query_list))
+	query_list = request.form['query']
+	print(query_list)
 	#query_list string type turns into list type
 	
 	file = open("smallIndex.txt", "r")
 	lines = file.readlines()
 	outputResults = []
-	
+	outputResults = cosineScore(query_list)
 	#loop through each word
+	"""
 	for word in query_list:
 		word = word.strip() #remove spaces
-		
+		cosineScore()
 		#go through small index
 		for line in lines:
 			#print("Line:", line.split()[0][0:-1])
@@ -31,61 +32,86 @@ def output():
 				#print("outputResults: ", line.split()[1:5])
 				outputResults.append(line.split()[1:])
 				break
+	"""
 	#print(outputResults)
 	return render_template("output.html", output=outputResults)
-"""
-@app.route("/charts")
-def charts():
-	return render_template("charts.html")
 
-@app.route("/sectors")
-def sectors_view():
-	fig = create_figure()
-	#img = io.BytesIO()  # create the buffer
-	fig = plt.gcf()
-	#/home/jerrylshen/stock_scraper/
-	fig.savefig('/home/jerrylshen/stock_scraper/static/plot.png', dpi=400)
 
-	meta_data = sectors.Sectors().get_meta()
-	return render_template('sectors.html',  meta_data=meta_data)
+import time
+import ast
+import collections
 
-def create_figure():
-	fig = Figure()
-	df = sectors.Sectors().create_sector_dataframe()
-	df.plot(kind='bar')
-	plt.axhline(0, c='k', linewidth=0.5)
-	plt.axis("tight")
-	plt.title("Real-Time Performance of the Day")
-	plt.xticks([])
-	plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left", prop={'size': 8, 'family': 'DejaVu Sans Mono'})
+print("starting")
+start = time.time()  # for measuring time
+
+# Create dict where key=docID, value= total terms
+docID_terms = open("docID_terms.txt", "r")
+lines = docID_terms.readlines()
+docIDTotal = {}
+for line in lines:
+	line = line.strip().split(":")
+	docID = int(line[0])
+	total = int(line[1])
+	docIDTotal[docID] = total
+
+file = open("index.txt", "r")
+# TF_IDFIndex = open("TF_IDFIndex.txt", "w")  # output file
+lines = file.readlines()
+numOfDocs = 55393
+
+
+# line = "shaping: {0: [1, 1], 1: [1, 1]}"
+def cosineScore(query: str) -> [str]:
+	result = []
+	result_dict = collections.defaultdict(int)
+	first = []
+	query = query.split(" ")
+	for term in query:
+		term = term.lower()
+		for line in lines:
+			word = line.split(":")[0]  # "shaping"
+			if word != term:
+				continue
+			
+			length = len(word) + 2
+			
+			strDict = line[length:]  # "{0: [1, 1], 1: [1, 1]}"
+			wordDict = ast.literal_eval(strDict)  # converts str to dict; {0: [1, 1], 1: [1, 1]}
+			
+			# key = docID, value[0] = freq
+			temp = {}
+			temp_docID = []
+			for key, value in wordDict.items():
+				temp[key] = value[0] / docIDTotal[key]
+				temp_docID.append(key)
+			if first == []:
+				first = temp_docID
+			else:
+				first = list(set(first) & set(temp_docID))
+			result.append(temp)
 	
-	plt.tight_layout()
-	return fig
-
-@app.route("/earnings")
-def earnings():
-	return render_template("earnings.html")
-
-@app.route("/insider_trading")
-def insider_trading():
-	return render_template("insider_trading.html")
-
-@app.route('/output_insider_trading', methods=['POST'])
-def output_insider_trading():
-	company = request.form['company']
-	company = insider_trading_data.InsiderTrading(company)
-	output = company.output_data()
+	for tf_dict in result:
+		for docID in first:
+			result_dict[docID] += tf_dict[docID]
 	
-	return render_template("output_insider_trading.html", output=output)
+	top5result = []
+	for i in range(5):
+		key = max(result_dict, key=result_dict.get)
+		top5result.append(key)
+		del result_dict[key]
+	
+	top5result_url = []
+	docID_map = open("docID_map.txt", "r")
+	row = docID_map.readlines()
+	for docID in top5result:
+		top5result_url.append("".join(row[docID].strip().split(":")[1]+":"+row[docID].strip().split(":")[2]+"\n"))
+	
+	print(top5result_url)
+	return "".join(top5result_url)
 
-@app.route("/updates")
-def updates():
-	return render_template("updates.html")
 
-@app.route("/about")
-def about():
-	return render_template("about.html")
-"""
+end = time.time()
+print(end - start)
 
 if __name__ == "__main__":
 	app.run()
