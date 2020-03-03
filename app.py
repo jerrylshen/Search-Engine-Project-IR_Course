@@ -15,9 +15,6 @@ def output():
 	print(query_list)
 	#query_list string type turns into list type
 	
-	file = open("smallIndex.txt", "r")
-	lines = file.readlines()
-	outputResults = []
 	outputResults = cosineScore(query_list)
 	#loop through each word
 	"""
