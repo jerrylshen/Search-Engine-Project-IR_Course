@@ -51,7 +51,7 @@ for line in lines:
 	total = int(line[1])
 	docIDTotal[docID] = total
 
-file = open("index.txt", "r")
+file = open("smallIndex.txt", "r")
 # TF_IDFIndex = open("TF_IDFIndex.txt", "w")  # output file
 lines = file.readlines()
 numOfDocs = 55393
@@ -95,6 +95,7 @@ def cosineScore(query: str) -> [str]:
 			result_dict[docID] += tf_dict[docID]
 	
 	top5result = []
+	print("RESULTS", len(result_dict))
 	for i in range(min(len(result_dict), 5)):
 		key = max(result_dict, key=result_dict.get)
 		top5result.append(key)
