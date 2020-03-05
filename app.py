@@ -87,12 +87,15 @@ def cosineScore(query: str) -> [str]:
 				first = list(set(first) & set(temp_docID))
 			result.append(temp)
 	
+	if result == []:
+		return "None"
+	
 	for tf_dict in result:
 		for docID in first:
 			result_dict[docID] += tf_dict[docID]
 	
 	top5result = []
-	for i in range(5):
+	for i in range(min(len(result_dict), 5)):
 		key = max(result_dict, key=result_dict.get)
 		top5result.append(key)
 		del result_dict[key]
