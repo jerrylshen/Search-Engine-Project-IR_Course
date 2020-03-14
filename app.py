@@ -1,42 +1,51 @@
 from flask import Flask, render_template, request
-
-
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.spatial import distance as dis
+from decimal import *
+import cProfile
+import re
+import time
+import math
+import ast
+import time
+import ast
 
 app = Flask(__name__)
-
+global topNum
 @app.route("/")
 def home():
 	return render_template("home.html")
 
 #get query from form box from an html file
+"""
+@app.route('/home', methods=['POST'])
+def topNumOutput():
+	num = request.form['query_num']
+	topNum = max(num, 1)
+	print(num)
+	#return render_template("home.html")
+"""
+#get query from form box from an html file
 @app.route('/output', methods=['POST'])
 def output():
+	global topNum
+	topNum = 10
+	if request.form['query_num'] >= "1":
+		topNum = int(request.form['query_num'])
+
 	query_list = request.form['query']
 	print(query_list)
 	#query_list string type turns into list type
 	
 	outputResults = cosineScore(query_list)
-	#loop through each word
-	"""
-	for word in query_list:
-		word = word.strip() #remove spaces
-		cosineScore()
-		#go through small index
-		for line in lines:
-			#print("Line:", line.split()[0][0:-1])
-			#first word in each index line is "str:", need to get rid of ":"
-			if line.split()[0][0:-1].lower() == word.lower():
-				#print("outputResults: ", line.split()[1:5])
-				outputResults.append(line.split()[1:])
-				break
-	"""
+	
 	#print(outputResults)
 	return render_template("output.html", output=outputResults)
 
 
-import time
-import ast
-import collections
+
+
 
 print("starting")
 start = time.time()  # for measuring time
@@ -50,65 +59,146 @@ for line in lines:
 	docID = int(line[0])
 	total = int(line[1])
 	docIDTotal[docID] = total
+	
+# Create dict where key=docID, value= total terms
+docID_map = open("docID_map.txt", "r")
+lines = docID_map.readlines()
+docIDMap = {}
+for line in lines:
+	index_colon = line.strip(", \n").index(":")
+	docID = line[0:index_colon]
+	url = line[index_colon+1:]
+	docIDMap[docID] = url
 
-file = open("smallIndex.txt", "r")
-# TF_IDFIndex = open("TF_IDFIndex.txt", "w")  # output file
-lines = file.readlines()
-numOfDocs = 55393
+
+numOfDocs = 39059
+
+# token:docID[score],docID[score]
+token_normalized = {}
+# token:docID,docID
+token_docID = {}
+# token:[normalized,normalized]
+token_only_normalized = {}
 
 
-# line = "shaping: {0: [1, 1], 1: [1, 1]}"
-def cosineScore(query: str) -> [str]:
-	result = []
-	result_dict = collections.defaultdict(int)
-	first = []
-	query = query.split(" ")
-	for term in query:
-		term = term.lower()
-		for line in lines:
-			word = line.split(":")[0]  # "shaping"
-			if word != term:
+# save token_normalized into memory
+# key = word, value= docID[TF-IDF score],docID[TF_IDF score]
+def get_normalized_and_docID():
+	file = open("Token_TFIDF_Normalized.txt", "r")
+	lines = file.readlines()
+	
+	for line in lines:
+		line = line.strip(", \n")
+		index_colon = line.index(":")
+		token = line[0:index_colon]
+		try:
+			token_normalized[token] = ast.literal_eval(line[index_colon + 1:])
+		except:
+			continue
+	file.close()
+	
+	file = open("Token_docID.txt", "r")
+	lines = file.readlines()
+	
+	for line in lines:
+		line = line.strip(", \n")
+		index_colon = line.index(":")
+		token = line[0:index_colon]
+		token_docID[token] = line[index_colon + 1:].split(",")
+	file.close()
+	
+	file = open("Token_Normalized.txt", "r")
+	lines = file.readlines()
+	
+	for line in lines:
+		line = line.strip(", \n")
+		index_colon = line.index(":")
+		token = line[0:index_colon]
+		token_only_normalized[token] = line[index_colon + 1:].strip(" \n").split(" ")
+	file.close()
+get_normalized_and_docID()
+
+
+def cosineScore(query: [str]) -> [str]:
+	# token:score
+	all_token_score = {}
+	# token:docID, docID
+	all_token_docID = []
+	new_query = []
+	for token in query:
+		try:
+			if token_docID[token]:
+				if not all_token_docID:
+					all_token_docID.append(token_docID[token])
+				else:
+					all_token_docID = np.intersect1d(all_token_docID[0], token_docID[token])
+				new_query.append(token)
+		except:
+			try:
+				if token_docID[token.lower()]:
+					if not all_token_docID:
+						all_token_docID.append(token_docID[token])
+					else:
+						all_token_docID = np.intersect1d(all_token_docID[0], token_docID[token])
+					new_query.append(token)
+			except:
 				continue
-			
-			length = len(word) + 2
-			
-			strDict = line[length:]  # "{0: [1, 1], 1: [1, 1]}"
-			wordDict = ast.literal_eval(strDict)  # converts str to dict; {0: [1, 1], 1: [1, 1]}
-			
-			# key = docID, value[0] = freq
-			temp = {}
-			temp_docID = []
-			for key, value in wordDict.items():
-				temp[key] = value[0] / docIDTotal[key]
-				temp_docID.append(key)
-			if first == []:
-				first = temp_docID
-			else:
-				first = list(set(first) & set(temp_docID))
-			result.append(temp)
 	
-	if result == []:
-		return "None"
+	if not all_token_docID:
+		return []
 	
-	for tf_dict in result:
-		for docID in first:
-			result_dict[docID] += tf_dict[docID]
+	# print("og", len(all_token_docID))
+	# [docID, docID]
+	query_length = len(new_query)
+	if 1 < query_length:
+		all_token_docID = ",".join(list(set(all_token_docID[0]).intersection(*all_token_docID))).split(",")
+	else:
+		all_token_docID = all_token_docID[0]
+	# print("all_token_docID", len(all_token_docID))
 	
-	top5result = []
-	print("RESULTS", len(result_dict))
-	for i in range(min(len(result_dict), 5)):
-		key = max(result_dict, key=result_dict.get)
-		top5result.append(key)
-		del result_dict[key]
+	tfidf_query = []
+	for token in new_query:
+		tfidf_query.append(
+			(new_query.count(token) / query_length) * math.log((1 + numOfDocs) / len(token_docID[token])))
 	
-	top5result_url = []
-	docID_map = open("docID_map.txt", "r")
-	row = docID_map.readlines()
-	for docID in top5result:
-		top5result_url.append("".join(row[docID].strip().split(":")[1]+":"+row[docID].strip().split(":")[2]+"\n"))
+	# normalizing code; go thru all_tf_idf
+	if len(tfidf_query) > 1:
+		old_min = min(tfidf_query)
+		old_range = max(tfidf_query) - old_min
+		new_min = 0
+		new_range = 1 + 0.9999999999
+		# technically, range is 0 to 1.99999; +0.999 to prevent the top bucket 1 to e overrepresented
+		tfidf_query = [[float((n - old_min) / old_range * new_range + new_min) for n in tfidf_query]]
 	
-	print(top5result_url)
-	return "".join(top5result_url)
+	else:
+		tfidf_query = [[1]]
+	
+	# docID:[score,score]
+	all_scores_keys = []
+	all_scores_values = []
+	
+	for docID in all_token_docID:
+		temp_scores = []
+		for token in new_query:
+			# index_docID = token_docID[token].index(docID)
+			# score = token_only_normalized[token][token_docID[token].index(docID)]
+			temp_scores.append(float(token_normalized[token][int(docID)]))
+		all_scores_keys.append(docID)
+		all_scores_values.append(temp_scores)
+	
+	cosine_result = cosine_similarity(tfidf_query, all_scores_values)
+	
+	
+	top_results = []
+	for i in range(topNum):
+		max_index = np.argmax(cosine_result)
+		cosine_result = np.delete(cosine_result, max_index)
+		top_results.append(docIDMap[all_scores_keys[max_index]])
+		del all_scores_values[max_index]
+		del all_scores_keys[max_index]
+	# print("allscroes:", all_scores)
+	
+	return "".join(top_results)
 
 
 end = time.time()
