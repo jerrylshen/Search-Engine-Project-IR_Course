@@ -135,6 +135,7 @@ def cosineScore(query: [str]) -> [str]:
 	all_token_docID = set()
 	new_query = []
 	# print("docIDL", token_docID)
+	#print(token_docID)
 	for token in query:
 		if token in token_docID:
 			if all_token_docID:
