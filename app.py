@@ -86,19 +86,6 @@ def get_normalized_and_docID():
 	global PAGERANK_DOC
 	global pagerank
 	
-	smallIndex = open("smallIndex.txt", "r")
-	smallIndex2 = open("smallIndex2.txt", "r")
-	index = open("Token_TFIDF_Normalized.txt", "w")
-
-	lines = smallIndex.readlines()
-	for line in lines:
-		index.write(line)
-
-	lines2 = smallIndex2.readlines()
-	for line in lines2:
-		index.write(line)
-	index.close()
-	
 	file = open("Token_TFIDF_Normalized.txt", "r")
 	lines = file.readlines()
 	print("part1")
