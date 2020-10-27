@@ -1,5 +1,5 @@
 ## Search Engine http://shenjl.pythonanywhere.com/
-Built after crawling 55393 HTML documents in developer.zip, with 1352851 unique terms in a team of 3.
+Built after crawling 55,393 HTML documents in developer.zip, with 1,352,851 unique terms in a team of 3.
 
 This Drive folder contains the zipped folder, the outputted txt files that are too large to upload to Github, and some misc code:  
 https://drive.google.com/drive/folders/16kRnpAoDPqRqCHf6IUg8JZBwJDjMgLqM?usp=sharing  
